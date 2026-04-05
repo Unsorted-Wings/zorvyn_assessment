@@ -14,9 +14,9 @@ type SortConfig = { key: string; direction: "asc" | "desc" | null };
 
 interface DataContextType {
   transactions: Transaction[];
-  addTransaction: (tx: Omit<Transaction, "id">) => void;
-  deleteTransaction: (id: string) => void;
-  updateTransaction: (id: string, patch: Partial<Transaction>) => void;
+  addTransaction: (tx: Omit<Transaction, "id">) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  updateTransaction: (id: string, patch: Partial<Transaction>) => Promise<void>;
   setTransactions: (tx: Transaction[]) => void;
   // UI state (persisted)
   search: string;
@@ -95,6 +95,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, []);
 
+  const USE_API = true; // toggle mock API integration
+
+  // Fetch server-side mock data and sync with client state (non-blocking)
+  React.useEffect(() => {
+    if (!USE_API) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/transactions');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted && Array.isArray(data)) {
+          setStateTransactions(data);
+        }
+      } catch (err) {
+        // ignore, keep local data
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_KEY, JSON.stringify(transactions));
@@ -107,15 +130,62 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [search, categoryFilter, sortConfig]);
 
-  const addTransaction = (tx: Omit<Transaction, "id">) => {
+  const addTransaction = async (tx: Omit<Transaction, "id">) => {
+    if (USE_API) {
+      try {
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tx),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          setStateTransactions((prev) => [created, ...prev]);
+          return;
+        }
+      } catch (err) {
+        // fallthrough to local update
+      }
+    }
+
     const newTx: Transaction = { id: Math.random().toString(36).substr(2, 9), ...tx };
     setStateTransactions((prev) => [newTx, ...prev]);
   };
 
-  const deleteTransaction = (id: string) => setStateTransactions((prev) => prev.filter((t) => t.id !== id));
+  const deleteTransaction = async (id: string) => {
+    if (USE_API) {
+      try {
+        const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setStateTransactions((prev) => prev.filter((t) => t.id !== id));
+          return;
+        }
+      } catch (err) {
+        // fallthrough
+      }
+    }
+    setStateTransactions((prev) => prev.filter((t) => t.id !== id));
+  };
 
-  const updateTransaction = (id: string, patch: Partial<Transaction>) =>
+  const updateTransaction = async (id: string, patch: Partial<Transaction>) => {
+    if (USE_API) {
+      try {
+        const res = await fetch(`/api/transactions/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setStateTransactions((prev) => prev.map((t) => (t.id === id ? updated : t)));
+          return;
+        }
+      } catch (err) {
+        // fallthrough
+      }
+    }
     setStateTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  };
 
   return (
     <DataContext.Provider value={{

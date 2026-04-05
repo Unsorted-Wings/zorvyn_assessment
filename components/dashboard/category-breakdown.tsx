@@ -81,6 +81,11 @@
               <div className="mx-auto w-full aspect-square h-62.5 flex items-center justify-center">
                 <Skeleton className="h-60 w-60 rounded-full" />
               </div>
+            ) : chartData.length === 0 ? (
+              <div className="h-62.5 w-full flex flex-col items-center justify-center text-center text-muted-foreground px-4">
+                <p className="text-sm font-medium">No expense data</p>
+                <p className="text-xs mt-1">Expenses for the selected month are not available yet.</p>
+              </div>
             ) : (
               <ChartContainer
                 config={chartConfig}

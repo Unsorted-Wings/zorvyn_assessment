@@ -56,6 +56,11 @@
         <CardContent>
           {!isHydrated ? (
             <Skeleton className="h-62.5 w-full rounded-2xl" />
+          ) : chartData.length === 0 ? (
+            <div className="h-62.5 w-full flex flex-col items-center justify-center text-center text-muted-foreground px-4">
+              <p className="text-sm font-medium">No transactions yet</p>
+              <p className="text-xs mt-1">Add transactions to see your balance trend over time.</p>
+            </div>
           ) : (
             <ChartContainer config={chartConfig} className="h-62.5 w-full">
               <AreaChart

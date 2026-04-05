@@ -221,7 +221,15 @@ export function TransactionsTable() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={role === "admin" ? 5 : 4} className="h-32 text-center text-muted-foreground">
-                        No transactions found.
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <div>No transactions found.</div>
+                          {role === "admin" && (
+                            <Button size="sm" className="mt-2" onClick={() => setIsAdding(true)}>
+                              <HugeiconsIcon icon={PlusSignIcon} size={14} />
+                              <span className="ml-2">Add your first transaction</span>
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
