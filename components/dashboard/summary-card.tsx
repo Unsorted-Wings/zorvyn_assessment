@@ -3,6 +3,7 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SummaryCardProps {
   title: string;
@@ -15,6 +16,7 @@ interface SummaryCardProps {
   };
   className?: string;
   iconClassName?: string;
+  loading?: boolean;
 }
 
 export function SummaryCard({
@@ -25,7 +27,27 @@ export function SummaryCard({
   trend,
   className,
   iconClassName,
+  loading,
 }: SummaryCardProps) {
+  if (loading) {
+    return (
+      <Card className={cn("shadow-sm", className)}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            <Skeleton className="h-4 w-28" />
+          </CardTitle>
+          <div className={cn("p-2 rounded-lg bg-secondary", iconClassName)}>
+            <Skeleton className="h-5 w-5" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-36 mb-2" />
+          <Skeleton className="h-4 w-48" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className={cn("shadow-sm", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

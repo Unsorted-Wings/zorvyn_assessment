@@ -10,37 +10,47 @@ import { BalanceTrend } from "@/components/dashboard/balance-trend";
 import { CategoryBreakdown } from "@/components/dashboard/category-breakdown";
 import { TransactionsTable } from "@/components/transaction/transaction-table";
 import { InsightsPanel } from "@/components/insights/Insights-panel";
+import { useData } from "@/context/DataContext";
 
 export default function DashboardPage() {
+  const { transactions, isHydrated } = useData();
+
+  const currentBalance = transactions.reduce((acc, t) => acc + (t.type === "income" ? t.amount : -t.amount), 0);
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const monthlyIncome = transactions
+    .filter((t) => t.type === "income" && t.date.slice(0, 7) === currentMonthKey)
+    .reduce((acc, t) => acc + t.amount, 0);
+  const monthlyExpenses = transactions
+    .filter((t) => t.type === "expense" && t.date.slice(0, 7) === currentMonthKey)
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const fmt = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
     <div className="space-y-8 bg-b pb-10 max-w-7xl mx-auto">
-      {/* 1. Header */}
-      <div className="flex flex-col gap-1">
-        <h2 className="text-3xl font-bold text-primary tracking-tight">Financial Overview</h2>
-        <p className="text-muted-foreground">Detailed pulse of your spending and savings.</p>
-      </div>
-
       {/* 2. Summary Cards (3 columns) */}
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard
           title="Current Balance"
-          value="$5,430.75"
-          description="Updated 1 hour ago"
+          value={fmt(currentBalance)}
+          description="Updated just now"
           icon={Wallet02Icon}
+          loading={!isHydrated}
         />
         <SummaryCard
           title="Monthly Income"
-          value="$4,500.00"
-          description="increase from last month"
+          value={fmt(monthlyIncome)}
+          description="this month"
           icon={MoneyReceiveCircleIcon}
-          trend={{ value: "20%", isPositive: true }}
+          trend={{ value: "", isPositive: true }}
+          loading={!isHydrated}
         />
         <SummaryCard
           title="Monthly Expenses"
-          value="$2,150.25"
-          description="increase from last month"
+          value={fmt(monthlyExpenses)}
+          description="this month"
           icon={MoneySendCircleIcon}
-          trend={{ value: "20%", isPositive: true }}
+          trend={{ value: "", isPositive: false }}
+          loading={!isHydrated}
         />
       </div>
 
